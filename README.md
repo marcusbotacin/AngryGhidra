@@ -1,32 +1,21 @@
-# AngryGhidra
+# (My) AngryGhidra
 
-<p align="center"><img src="./images/angryGhidraIcon.png" width="360" height="250">
+This is my version of the AngryGhidra plugin. Check out the original plugin [here](https://github.com/Nalen98/AngryGhidra)
 
-This project was initially started as a part of [Digital Security](https://github.com/DSecurity)'s Research Centre internship ["Summer of Hack 2020"](https://dsec.ru/about/summerofhack/).
+I created this version to be used along [MalVerse](https://github.com/marcusbotacin/MalVerse).
 
-The plugin allows you to use [angr](https://github.com/angr/angr) for binary analysis and symbolic execution from Ghidra interface.
+The idea was to output the output of my [patched angr version](https://github.com/marcusbotacin/angr). Since I'm too lazy to create a plugin by myself, I reused this very nice one.
 
-Solving [CTF challenge from SecurityFest 2016 "fairlight"](https://github.com/angr/angr-doc/blob/master/examples/securityfest_fairlight/fairlight) with AngryGhidra plugin:
+This plugin has two components, a Java frontend for ghidra and a Python backend for angr. If you look into *AngryGhidraProvider.java* you notice that they are integrated via processes.
 
-![AngryGhidra Plugin](./images/AngryGhidraPlugin.gif)
+```Java
+ public void runAngr(String script_path, String angrfile_path) {
+        ProcessBuilder pb = new ProcessBuilder("python3", script_path, angrfile_path);
+```
 
-# Screenshots
+Since I was interested only in modifying the angr part, I just updated the *angryghidra_script/angryghidra.py* script. To understand the modifications, check out the MalVerse repository. 
 
-![AngryGhidraView](./images/AngryGhidraView.png)
-
-Apply patched bytes to write them to the memory of angr project:
-
-![ApplyPatchedBytes](./images/ApplyPatchedBytes.png)
-
-# Installation
-  
-- `pip3 install angr` at first
-- Make sure that python3 directory added to the `PATH` (necessarily)
-- Download Release version of extension and install it in Ghidra `File → Install Extensions...` 
-- Use gradle to build extension: `GHIDRA_INSTALL_DIR=${GHIDRA_HOME} gradle` and use Ghidra to install it: `File → Install Extensions...` 
-- Clone this repository to `\Ghidra\Extensions` directory.
-
-
+Notice: My modifications break the original plugin features.
 
 
 
