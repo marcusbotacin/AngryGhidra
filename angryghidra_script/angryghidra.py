@@ -28,6 +28,7 @@ def hook_function(state):
 
 
 def main(file):
+
     with open(file, encoding='utf-8') as json_file:
         global EXPLORE_OPT
         EXPLORE_OPT = json.load(json_file)
@@ -116,17 +117,38 @@ def main(file):
                         hook_length = data
                         break
                 p.hook(int(hook_address, 16), hook_function, length=hook_length)
-
+    # Changed to always start from a blank state and entry point
     simgr = p.factory.simulation_manager(state)
-    if "avoid" in locals():
-        simgr.use_technique(angr.exploration_techniques.Explorer(find=find, avoid=avoid))
-    else:
-        simgr.use_technique(angr.exploration_techniques.Explorer(find=find))
-
-    simgr.run()
-
-    if simgr.found:
-        found_path = simgr.found[0]
+    # Change the exploration method, look for the address passed by ghidra
+    found = simgr.explore(find=find)
+    if found:
+        # list of Simprocs in the path
+        funcs = dict()
+        # Traverse all simprocs
+        for func in found.found[0].history.simprocs.hardcopy:
+            # group them by simproc type, ordered
+            try:
+                x = funcs[func.name]
+            except:
+                x = []
+            # Still looking only for the first state, need to make it better in the future
+            func.set_state(found.found[0])
+            x.append(func)
+            funcs[func.name] = x
+        # global decompiled code
+        code = ""
+        # for each simproc
+        for func_name in funcs:
+            # set function to be decompiled based on the name
+            cfg_func = cfg.functions.get(func_name)
+            # decompile passing the grouped invocation values
+            dec = p.analyses.Decompiler(cfg_func,concrete_values=funcs[func_name])
+            # append decompiled code to generate a single output
+            code= dec.codegen.text + '\n'
+        # output generated code
+        print(code)
+        # I'm stopping here right now, ignoring other plugin features.
+        return
 
         win_sequence = ""
         for win_block in found_path.history.bbl_addrs.hardcopy:
@@ -137,6 +159,7 @@ def main(file):
         win_sequence = win_sequence[:-1]
         print("Trace:" + win_sequence)
 
+    
         if len(argv) > 1:
             for i in range(1, len(argv)):
                 print("argv[{id}] = {solution}".format(id=i, solution=found_path.solver.eval(argv[i], cast_to=bytes)))
@@ -160,7 +183,8 @@ def main(file):
                                                       solution=found_path.solver.eval(stdin[0], cast_to=bytes)))
                 std_id += 1
     else:
-        print("")
+        print("No Solution")
+    f.close()
     return
 
 
